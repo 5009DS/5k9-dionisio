@@ -1,10 +1,21 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    CONEXÃO COM O BANCO
 
-   O Dionísio mora num projeto Supabase PRÓPRIO, separado do 5K9 Forms e do
-   5K9 Gestor. Não é preciosismo: roteiro é texto longo editado o dia inteiro,
-   e o padrão de escrita dele não tem nada a ver com o de um formulário
-   respondido uma vez ou com o fechamento financeiro do mês.
+   O Dionísio mora no MESMO projeto Supabase do 5K9 Forms — o mesmo que já
+   hospeda o 5K9 Chronos. Não é o desenho original (a primeira versão deste
+   arquivo previa um projeto próprio); mudou porque o plano gratuito do
+   Supabase limita quantos projetos a organização pode ter, e criar um quarto
+   projeto para guardar algumas centenas de roteiros custaria uma assinatura
+   mensal. O raciocínio completo — por que o Forms e não o Gestor, o que essa
+   escolha custa em troca — está no topo de db/schema.sql.
+
+   Como consequência direta: URL e chave aqui são IDÊNTICAS às de
+   lib/chronos.js (CHRONOS_URL/CHRONOS_ANON). Não é coincidência nem erro de
+   copiar — são o mesmo projeto, vistos de dois arquivos diferentes. O que os
+   diferencia é a TABELA: as deste sistema são prefixadas `dn_`
+   (`dn_roteiros`, `dn_clientes`), justamente para não colidir com as
+   `vz_` do Chronos ou as sem prefixo do Forms — ver db/remoto.js, que faz
+   essa tradução, e a explicação do prefixo em db/schema.sql.
 
    Enquanto os dois campos abaixo estiverem vazios, o sistema roda em MODO
    LOCAL: tudo é gravado no localStorage deste navegador e mais ninguém do
@@ -12,10 +23,13 @@
    sistema nasce.
 
    Para ligar no Supabase de verdade:
-     1. crie um projeto novo em supabase.com;
-     2. rode db/schema.sql no SQL Editor dele;
-     3. crie seu usuário em Authentication → Users → Add user;
-     4. cole aqui a URL e a chave `anon` (Settings → API).
+     1. rode db/schema.sql no SQL Editor do projeto do Forms (não crie um
+        projeto novo — é ele mesmo, o schema já vem prefixado para conviver
+        com as tabelas que já estão lá);
+     2. confirme que a pessoa já tem usuário em Authentication → Users
+        (se ela já usa o Forms ou o Chronos, já tem);
+     3. cole aqui a mesma URL e a mesma chave `anon` que estão em
+        lib/chronos.js.
 
    A chave `anon` é pública por natureza — vai no bundle e qualquer pessoa a
    lê no DevTools. Quem protege os roteiros é o RLS (ver db/schema.sql), que

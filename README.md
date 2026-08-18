@@ -34,13 +34,20 @@ Enquanto `Sistema/lib/supabase-config.js` estiver vazio, o sistema roda em
 do time enxerga e limpar o cache apaga os roteiros. A topnav mostra o selo
 âmbar "Modo local" o tempo todo por causa disso.
 
-Para conectar o banco de verdade:
+Para conectar o banco de verdade, o Dionísio entra no **mesmo projeto Supabase
+que já hospeda o Forms e o Chronos** — não um projeto novo. É a mesma escolha
+que o Chronos já fez, pelo mesmo motivo (cota do plano gratuito), e pelo mesmo
+critério: o Forms, não o Gestor, porque o Gestor é dinheiro sem porta pública
+nenhuma. O raciocínio completo, e o que essa escolha custa em troca (backup e
+cota compartilhados), está no topo de `Sistema/db/schema.sql`.
 
-1. crie um projeto Supabase **novo**, separado dos que hospedam o Forms e o Gestor;
-2. rode `Sistema/db/schema.sql` no SQL Editor dele;
-3. crie um usuário por pessoa em *Authentication → Users → Add user*;
-4. copie *Project URL* e a chave `anon` de *Settings → API*;
-5. cole as duas em `Sistema/lib/supabase-config.js`.
+1. rode `Sistema/db/schema.sql` no SQL Editor do projeto do Forms — as
+   tabelas já vêm prefixadas `dn_`, então não colidem com o que já está lá;
+2. confirme que a pessoa já tem usuário em *Authentication → Users* (quem já
+   usa o Forms ou o Chronos, já tem);
+3. copie a mesma *Project URL* e chave `anon` que já estão em
+   `Sistema/lib/chronos.js` (`CHRONOS_URL`/`CHRONOS_ANON`);
+4. cole as duas em `Sistema/lib/supabase-config.js`.
 
 Exporte os roteiros em **Configurações → Cópia de segurança** antes de trocar
 de modo: a troca não leva nada junto.
@@ -57,24 +64,34 @@ de modo: a troca não leva nada junto.
 ## Pontes com os outros sistemas
 
 O botão **Trazer**, na tela de Roteiros, e o botão **Trazer do Gestor**, em
-Cadastros, ligam este sistema aos outros dois sem compartilhar banco — cada
-um copia o que precisa, quando alguém manda copiar, e nunca sincroniza
-sozinho (o raciocínio completo está comentado em `lib/gestor.js` e
-`lib/chronos.js`).
+Cadastros, ligam este sistema aos outros dois por CÓPIA, não por consulta
+direta ao banco de outro sistema — cada um copia o que precisa, quando
+alguém manda copiar, e nunca sincroniza sozinho (o raciocínio completo está
+comentado em `lib/gestor.js` e `lib/chronos.js`). Isso vale mesmo depois de o
+Dionísio passar a morar no mesmo projeto Supabase do Chronos (ver *Modo local
+× Supabase*, acima): dividir projeto é sobre ONDE os dados moram fisicamente,
+e é ortogonal a como este sistema lê o que é do Gestor ou do Chronos — que
+continua sendo pela ponte, nunca por um JOIN direto nas tabelas `vz_` ou nas
+do Gestor.
 
 **Clientes, do Gestor.** Mesma cartela que o Chronos já usa
-(`cartela()`, no banco do Gestor): nome, empresa e cor, comparados por nome
-normalizado para não duplicar "Instituto Dr. Tigre" e "Instituto Dr Tigre"
-como dois clientes. Sem login — a função já filtra o que pode sair.
+(`cartela()`, no banco do Gestor — projeto separado, o dinheiro do estúdio):
+nome, empresa e cor, comparados por nome normalizado para não duplicar
+"Instituto Dr. Tigre" e "Instituto Dr Tigre" como dois clientes. Sem login —
+a função já filtra o que pode sair.
 
 **Temas e roteiros, do Chronos.** Este exige **login com a conta que você já
 usa no Chronos**. A diferença de tratamento não é capricho: a cartela expõe
 nome e cor, dado que já aparece em portfólio; aqui mora texto estratégico do
 cliente, às vezes ainda rascunho, e abrir isso sem sessão exporia o
-cronograma inteiro do estúdio a quem tiver a chave pública do navegador. O
-Chronos roda no mesmo projeto Supabase do Forms, então nenhuma das duas
-bases precisou de uma linha de código nova — a política de segurança de lá já
-libera leitura para qualquer autenticado da equipe.
+cronograma inteiro do estúdio a quem tiver a chave pública do navegador. Como
+o Chronos roda no mesmo projeto Supabase do Forms — o mesmo que o Dionísio
+agora também usa —, a ponte não precisou de nenhuma função nova no lado de
+lá: a política de segurança já libera leitura para qualquer autenticado da
+equipe. `lib/chronos.js` abre uma sessão PRÓPRIA mesmo assim (login separado,
+`storageKey` distinto), porque foi escrito antes dessa decisão — hoje ela é
+redundante com a sessão principal do Dionísio, mas simplificar isso é uma
+mudança à parte, não feita ainda.
 
 A conversão é literal: cada **seção** do Chronos vira uma **cena**; cada
 **orientação** (instrução de câmera, não falada) vira o lado do **vídeo** de
@@ -182,7 +199,7 @@ Sistema/
   store.js            escolhe o adaptador, cacheia leitura, grava com atraso
   theme.js            claro/escuro (mesma chave dos outros: 5k9_theme)
   db/
-    schema.sql        rodar uma vez, num projeto Supabase novo
+    schema.sql        rodar uma vez, no projeto Supabase do Forms/Chronos
     local.js          adaptador localStorage
     remoto.js         adaptador Supabase (import preguiçoso da lib)
   lib/

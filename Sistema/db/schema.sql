@@ -1,9 +1,34 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 5K9 DIONÍSIO — schema do banco.
 --
--- Rode UMA VEZ no SQL Editor de um projeto Supabase NOVO, separado dos que
--- hospedam o 5K9 Forms e o 5K9 Gestor. Depois crie os acessos em
--- Authentication → Users → Add user (um por pessoa do time).
+-- Rode UMA VEZ no SQL Editor do projeto Supabase que JÁ HOSPEDA O 5K9 FORMS
+-- (o mesmo que hospeda o 5K9 Chronos). Depois crie os acessos em
+-- Authentication → Users → Add user, se a pessoa ainda não tiver um lá.
+--
+-- ── Por que dentro do projeto do Forms, e não um projeto novo ─────────────
+-- O plano gratuito do Supabase limita quantos projetos a organização pode
+-- ter, e o estúdio já divide a cota entre Forms/Chronos e Gestor. O Chronos
+-- já fez essa escolha antes (ver o schema.sql dele) pelo mesmo motivo, e
+-- pelo mesmo motivo elegeu o Forms e não o Gestor: o Forms já tem superfície
+-- pública (o formulário que o cliente preenche), então dividir com ele não
+-- muda a natureza do risco. O Gestor é dinheiro, sem nenhuma porta pública —
+-- e não ganha uma só para economizar um projeto.
+--
+-- Dividir não tem contrapartida técnica: o Postgres não fica mais lento por
+-- ter mais tabelas, e o RLS isola cada uma independentemente. Tem uma
+-- contrapartida operacional, e é honesto dizer qual: um `pg_dump` de backup e
+-- uma eventual restauração passam a levar Forms, Chronos e Dionísio juntos, e
+-- os três dividem a mesma cota de linhas e armazenamento do plano.
+--
+-- ── O prefixo dn_ ──────────────────────────────────────────────────────────
+-- Toda tabela, índice, função, gatilho e política daqui começa com `dn_`.
+-- Não é enfeite: o Forms e o Gestor já têm tabela `clientes` — sem o
+-- prefixo, `create table if not exists clientes` encontraria uma tabela de
+-- OUTRO sistema com esse nome e simplesmente NÃO criaria a nossa, em
+-- silêncio, sem erro nenhum. O app passaria a gravar roteiro na tabela de
+-- cliente errada do sistema errado. `create or replace function` é pior
+-- ainda: se colidisse com uma função existente, SOBRESCREVERIA ela. O
+-- prefixo torna a colisão impossível em vez de improvável.
 --
 -- ── Duas decisões que valem explicação ────────────────────────────────────
 --
@@ -45,7 +70,7 @@ create extension if not exists pgcrypto;
 -- COPIA o essencial de lá (ver lib/gestor.js e a função `cartela()` do
 -- repositório do Gestor). Um cliente pode não ter roteiro nenhum ainda; um
 -- roteiro pode não ter cliente — peça institucional, teste, exercício.
-create table if not exists clientes (
+create table if not exists dn_clientes (
     id         text primary key default gen_random_uuid()::text,
     nome       text not null,
     empresa    text,
@@ -54,9 +79,9 @@ create table if not exists clientes (
     criado_em  timestamptz not null default now()
 );
 
-create index if not exists clientes_nome_idx on clientes(nome);
+create index if not exists dn_clientes_nome_idx on dn_clientes(nome);
 
-create table if not exists roteiros (
+create table if not exists dn_roteiros (
     id            text primary key default gen_random_uuid()::text,
     titulo        text not null default 'Roteiro sem título',
 
@@ -64,7 +89,7 @@ create table if not exists roteiros (
     -- O texto foi escrito de verdade; o roteiro passa a aparecer como "sem
     -- cliente", que é feio e recuperável — o certo nessa ordem (mesma regra
     -- do 5K9 Gestor para `entradas.cliente_id`).
-    cliente_id    text references clientes(id) on delete set null,
+    cliente_id    text references dn_clientes(id) on delete set null,
 
     -- reel | youtube | comercial | documentario | livre  (ver lib/roteiro.js)
     formato       text not null default 'reel',
@@ -101,15 +126,20 @@ create table if not exists roteiros (
 );
 
 -- A lista de roteiros ordena por última edição, sempre.
-create index if not exists roteiros_atualizado_idx on roteiros(atualizado_em desc);
-create index if not exists roteiros_cliente_idx    on roteiros(cliente_id);
+create index if not exists dn_roteiros_atualizado_idx on dn_roteiros(atualizado_em desc);
+create index if not exists dn_roteiros_cliente_idx    on dn_roteiros(cliente_id);
 
 -- ── atualizado_em carimbado pelo BANCO ───────────────────────────────────
 -- O adaptador local carimba no cliente porque não tem alternativa. Aqui o
 -- relógio do banco é o único confiável: dois navegadores com horários
 -- diferentes fariam a ordenação por última edição mentir, e o mais atrasado
 -- ganharia da edição mais nova.
-create or replace function roteiros_carimbar()
+--
+-- Nome da função também prefixado: `create or replace function` SOBRESCREVE
+-- sem perguntar se já existisse uma `roteiros_carimbar` de outro sistema
+-- neste projeto — é o mesmo risco de colisão das tabelas, só que mais grave,
+-- porque aqui não há "if not exists" nenhum para servir de rede de segurança.
+create or replace function dn_roteiros_carimbar()
 returns trigger language plpgsql as $$
 begin
     new.atualizado_em = now();
@@ -117,18 +147,24 @@ begin
 end;
 $$;
 
-drop trigger if exists roteiros_carimbar_trg on roteiros;
-create trigger roteiros_carimbar_trg
-    before insert or update on roteiros
-    for each row execute function roteiros_carimbar();
+drop trigger if exists dn_roteiros_carimbar_trg on dn_roteiros;
+create trigger dn_roteiros_carimbar_trg
+    before insert or update on dn_roteiros
+    for each row execute function dn_roteiros_carimbar();
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- RLS — nenhum roteiro, nenhum cliente, sai daqui sem sessão.
+--
+-- "Somente autenticado" aqui significa qualquer usuário do projeto — os
+-- mesmos logins do Forms e do Chronos, já que agora é o mesmo projeto. É o
+-- comportamento desejado: é a mesma equipe. Se um dia for preciso separar
+-- quem vê o quê, o lugar é aqui, trocando `using (true)` por uma checagem de
+-- papel (mesma nota que o schema do Chronos já registra).
 -- ═══════════════════════════════════════════════════════════════════════════
-alter table roteiros  enable row level security;
-alter table clientes  enable row level security;
+alter table dn_roteiros enable row level security;
+alter table dn_clientes enable row level security;
 
-create policy "roteiros: somente autenticado" on roteiros
+create policy "dn_roteiros: somente autenticado" on dn_roteiros
     for all to authenticated using (true) with check (true);
-create policy "clientes: somente autenticado" on clientes
+create policy "dn_clientes: somente autenticado" on dn_clientes
     for all to authenticated using (true) with check (true);

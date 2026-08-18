@@ -5,9 +5,27 @@
    PREGUIÇOSA (import dinâmico dentro de cliente()): em modo local o arquivo
    até é carregado pelo store, mas nada deve ir buscar 100kB de CDN para um
    banco que não existe.
+
+   ── POR QUE EXISTE UMA TRADUÇÃO DE NOME AQUI ──────────────────────────────
+   O resto do sistema conhece as coleções como `roteiros` e `clientes` — é o
+   nome que store.js expõe e que toda página usa. No banco, porém, elas se
+   chamam `dn_roteiros` e `dn_clientes`: o projeto Supabase é COMPARTILHADO
+   com o Forms e o Chronos (ver db/schema.sql), e sem o prefixo `dn_` a
+   tabela colidiria com uma já existente de outro sistema.
+
+   A tradução mora só AQUI, e não em store.js nem nas páginas, para o resto
+   do código continuar sem saber — nem precisar saber — que existe um projeto
+   compartilhado por trás. Se um dia o Dionísio ganhar projeto próprio, este
+   é o único arquivo a mudar: apagar o mapa, chamar `.from(colecao)` direto.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { SUPABASE_URL, SUPABASE_ANON } from '../lib/supabase-config.js';
+
+const TABELA = {
+    roteiros: 'dn_roteiros',
+    clientes: 'dn_clientes',
+};
+const nomeFisico = (colecao) => TABELA[colecao] || colecao;
 
 let sb = null;
 
@@ -56,7 +74,7 @@ export const remoto = {
 
     listar: async (colecao) => {
         const s = await cliente();
-        const { data, error } = await s.from(colecao).select('*')
+        const { data, error } = await s.from(nomeFisico(colecao)).select('*')
             .order('criado_em', { ascending: false });
         if (error) falhar(`listar(${colecao})`, error);
         return data || [];
@@ -67,20 +85,20 @@ export const remoto = {
         const linha = { ...registro, id: registro.id || crypto.randomUUID() };
         // criado_em fora do upsert quando já existe: o banco tem default
         // now(), e reenviar a data em toda edição reescreveria o histórico.
-        const { data, error } = await s.from(colecao).upsert(linha).select().maybeSingle();
+        const { data, error } = await s.from(nomeFisico(colecao)).upsert(linha).select().maybeSingle();
         if (error) falhar(`salvar(${colecao})`, error);
         return data;
     },
 
     excluir: async (colecao, id) => {
         const s = await cliente();
-        const { error } = await s.from(colecao).delete().eq('id', id);
+        const { error } = await s.from(nomeFisico(colecao)).delete().eq('id', id);
         if (error) falhar(`excluir(${colecao})`, error);
     },
 
     substituir: async (colecao, linhas) => {
         const s = await cliente();
-        const { error } = await s.from(colecao).upsert(linhas);
+        const { error } = await s.from(nomeFisico(colecao)).upsert(linhas);
         if (error) falhar(`substituir(${colecao})`, error);
         return linhas;
     },
