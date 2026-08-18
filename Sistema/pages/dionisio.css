@@ -1,0 +1,137 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   5K9 DIONÍSIO — vocabulário compartilhado das páginas.
+
+   Prefixo .dn-. Aqui mora o que aparece em MAIS DE UMA tela: a barra de
+   filtros, o selo de duração, a etiqueta de personagem, o estado vazio. O que
+   é de uma página só continua no <style> dela — o editor, que é quase o
+   sistema inteiro, guarda o próprio vocabulário lá dentro.
+
+   A regra do design system vale sem exceção: nenhuma cor literal, tudo por
+   var(--token). É o que faz o tema claro funcionar sem ninguém revisar.
+   (A única folha que usa cor literal é impressao.css, e o motivo está
+   escrito lá.)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Barra de filtros ─────────────────────────────────────────────────────
+   Mesma peça do .gs-barra do Gestor. Repetida em vez de importada porque os
+   dois sistemas são deploys independentes: um import entre repositórios não
+   existe, e um pacote compartilhado para uma barra de busca custaria mais
+   manutenção do que trinta linhas de CSS. */
+.dn-barra {
+    display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+    padding: var(--space-3) var(--space-4);
+}
+.dn-barra__busca { flex: 1; min-width: 200px; }
+.dn-barra__espaco { flex: 1; }
+
+.dn-filtros { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; }
+.dn-filtro {
+    height: 32px; padding: 0 var(--space-4);
+    border: 1px solid transparent; border-radius: var(--radius-pill);
+    background: transparent; color: var(--text-tertiary);
+    font-family: var(--font-sans); font-size: var(--text-sm); font-weight: 500;
+    cursor: pointer; white-space: nowrap;
+    transition: background-color var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
+}
+.dn-filtro:hover { background: var(--surface-3); color: var(--text-primary); }
+.dn-filtro.is-active {
+    background: var(--accent-muted); border-color: var(--accent-border); color: var(--accent);
+}
+
+/* ── Selo de duração ──────────────────────────────────────────────────────
+   O número mais consequente do sistema, presente na lista e no editor. A cor
+   responde à pergunta que ninguém formula em voz alta: "isso ainda cabe?".
+
+   Verde não aparece aqui de propósito. Caber no tempo é o estado NORMAL de um
+   roteiro, e pintar o normal de verde gasta a atenção que o aviso vai
+   precisar. Só o desvio ganha cor.
+
+     dentro   — neutro, sem alarde
+     no-osso  — âmbar: cabe, mas sem folga para respiro na edição
+     estoura  — vermelho: passou do alvo
+   ── ver lib/duracao.js, função situacao() ─────────────────────────────── */
+.dn-selo {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 30px; padding: 0 var(--space-3);
+    border: 1px solid var(--border-default); border-radius: var(--radius-pill);
+    background: var(--surface-3); color: var(--text-primary);
+    font-size: var(--text-sm); font-weight: 600;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+    transition: background-color var(--dur-base), color var(--dur-base), border-color var(--dur-base);
+}
+.dn-selo i, .dn-selo svg { width: 14px; height: 14px; }
+.dn-selo--no-osso {
+    background: var(--warning-muted); color: var(--warning); border-color: transparent;
+}
+.dn-selo--estoura {
+    background: var(--danger-muted); color: var(--danger); border-color: transparent;
+}
+.dn-selo--vazio { color: var(--text-tertiary); }
+/* Versão miúda, para dentro do cartão da lista. */
+.dn-selo--sm { height: 24px; padding: 0 var(--space-2); font-size: var(--text-xs); }
+
+/* ── Etiqueta de personagem ───────────────────────────────────────────────
+   Aparece no editor (onde é removível) e na folha do roteiro. Caixa alta por
+   convenção de roteiro, e por CSS não: o nome é GRAVADO em maiúsculas, então
+   ele sai certo também no CSV e na impressão. */
+.dn-etiqueta {
+    display: inline-flex; align-items: center; gap: var(--space-2);
+    height: 28px; padding: 0 var(--space-1) 0 var(--space-3);
+    border: 1px solid var(--border-default); border-radius: var(--radius-pill);
+    background: var(--surface-3); color: var(--text-primary);
+    font-size: var(--text-xs); font-weight: 600; letter-spacing: var(--tracking-wide);
+}
+.dn-etiqueta--fixa { padding-right: var(--space-3); }
+.dn-etiqueta__tirar {
+    width: 20px; height: 20px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: none; border-radius: 50%; background: none;
+    color: var(--text-tertiary); cursor: pointer;
+    transition: background-color var(--dur-fast), color var(--dur-fast);
+}
+.dn-etiqueta__tirar:hover { background: var(--danger-muted); color: var(--danger); }
+.dn-etiqueta__tirar i, .dn-etiqueta__tirar svg { width: 11px; height: 11px; }
+
+.dn-etiquetas { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+
+/* ── Lista marcável ────────────────────────────────────────────────────────
+   Linhas com caixa de seleção, para escolher o que trazer de uma ponte
+   externa. Usada tanto na cartela do Gestor (pages/cadastros.js) quanto na
+   escolha de clientes e conteúdos do Chronos (pages/importar-chronos.js) —
+   por isso mora aqui, e não no <style> de uma página só. */
+.dn-marcaveis { display: flex; flex-direction: column; gap: var(--space-1); margin-bottom: var(--space-4); }
+.dn-marcavel {
+    display: flex; align-items: center; gap: var(--space-3);
+    width: 100%; padding: var(--space-2) var(--space-3);
+    border: none; border-radius: var(--radius-sm);
+    background: none; font-family: var(--font-sans); text-align: left;
+    cursor: pointer;
+    transition: background-color var(--dur-fast);
+}
+.dn-marcavel:hover { background: var(--surface-3); }
+.dn-marcavel input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+.dn-marcavel__info { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.dn-marcavel__nome { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); }
+.dn-marcavel__meta { font-size: var(--text-xs); color: var(--text-tertiary); }
+.dn-marcavel i, .dn-marcavel svg { width: 15px; height: 15px; color: var(--text-tertiary); flex-shrink: 0; }
+
+/* ── Cartão de seção ──────────────────────────────────────────────────────
+   O invólucro padrão de conteúdo dentro da página. */
+.dn-secao { padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-5); }
+.dn-secao__cabeca { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.dn-secao__lado { display: flex; align-items: center; gap: var(--space-2); }
+
+/* ── Estado vazio (usa .ds-empty do tokens.css, com um empurrão) ────────── */
+.dn-vazio { padding: var(--space-10) var(--space-4); }
+
+/* ── Texto de apoio ─────────────────────────────────────────────────────── */
+.dn-apoio {
+    margin: 0; font-size: var(--text-sm); color: var(--text-tertiary);
+    line-height: var(--leading-body); max-width: 68ch;
+}
+.dn-apoio strong { color: var(--text-secondary); }
+
+@media (max-width: 720px) {
+    .dn-barra { padding: var(--space-3); }
+    .dn-barra__busca { min-width: 100%; order: -1; }
+}

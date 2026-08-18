@@ -1,0 +1,179 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOLHA IMPRESSA — o roteiro em papel (ou em PDF).
+
+   ── Por que esta folha IGNORA o design system, de propósito ──────────────
+   Pelo mesmo motivo que o e-mail de comprovante do 5K9 Gestor ignora: o
+   destino não é uma tela do sistema. Aqui:
+
+     · Papel é branco. O painel é escuro por escolha, mas um roteiro impresso
+       em fundo escuro gasta a impressora inteira e sai ilegível — e a maioria
+       dos navegadores desliga o fundo na impressão de qualquer forma, o que
+       deixaria texto claro sobre branco: invisível.
+     · Toda cor é LITERAL. `var(--accent)` depende do tema salvo no
+       navegador de quem imprime; um roteiro que sai diferente na máquina de
+       cada pessoa é um roteiro que ninguém confia.
+     · A fonte cai para a família do sistema se a Instrument Sans não tiver
+       carregado. Impressão não espera fonte da web.
+
+   ── Regra de ouro deste arquivo ──────────────────────────────────────────
+   TUDO aqui dentro vale só dentro de @media print. Uma única regra vazando
+   para a tela é o tipo de coisa que só se descobre quando alguém abre o
+   sistema num monitor claro e encontra texto preto sobre fundo preto.
+
+   O conteúdo impresso é montado em #impressao por lib/exportar.js — a folha
+   não conhece a interface, só o HTML que ela mesma recebe.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Na tela, a área de impressão não existe. */
+#impressao { display: none; }
+
+@media print {
+
+    /* ── Papel ───────────────────────────────────────────────────────────
+       Margem no @page e não no corpo: só assim o navegador reserva a área em
+       TODA página, e não apenas na primeira. 2cm é o que cabe numa prancheta
+       com furos sem comer texto. */
+    @page {
+        size: A4 portrait;
+        margin: 2cm 1.8cm;
+    }
+
+    html, body {
+        background: #ffffff !important;
+        color: #111111 !important;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* A interface inteira sai; só a folha fica. */
+    #app { display: none !important; }
+    .no-print { display: none !important; }
+
+    #impressao {
+        display: block;
+        font-family: "Instrument Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 10.5pt;
+        line-height: 1.45;
+        color: #111111;
+    }
+
+    /* ── Cabeçalho ──────────────────────────────────────────────────────── */
+    .im-cabeca {
+        border-bottom: 1.5pt solid #111111;
+        padding-bottom: 10pt;
+        margin-bottom: 16pt;
+    }
+    .im-cabeca h1 {
+        margin: 0;
+        font-size: 20pt;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        text-transform: uppercase;
+        /* Condensed é a voz de display da marca — o único traço do design
+           system que atravessa para o papel, porque é forma e não cor. */
+        font-stretch: 75%;
+        font-variation-settings: 'wdth' 75;
+    }
+    .im-subtitulo {
+        margin: 3pt 0 0;
+        font-size: 9pt;
+        color: #555555;
+    }
+
+    .im-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4pt 18pt;
+        margin: 10pt 0 0;
+    }
+    .im-meta div { display: flex; gap: 4pt; align-items: baseline; }
+    .im-meta dt {
+        font-size: 7.5pt;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #777777;
+    }
+    .im-meta dd {
+        margin: 0;
+        font-size: 9pt;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Blocos da parte narrativa ───────────────────────────────────────
+       break-inside: avoid mantém um ato inteiro na mesma página quando ele
+       cabe. Quando não cabe, o navegador quebra normalmente — o valor é uma
+       preferência, não uma promessa, e é isso que queremos: um Ato II de
+       duas páginas não pode virar página em branco. */
+    .im-bloco {
+        margin-bottom: 14pt;
+        break-inside: avoid;
+    }
+    .im-bloco h2 {
+        margin: 0 0 5pt;
+        font-size: 9pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #111111;
+        border-bottom: 0.5pt solid #cccccc;
+        padding-bottom: 3pt;
+    }
+    .im-bloco p { margin: 0 0 6pt; }
+    .im-bloco p:last-child { margin-bottom: 0; }
+    .im-vazio { color: #999999; font-style: italic; }
+
+    /* Quebra explícita entre a parte narrativa e a técnica: são dois
+       documentos que viajam juntos, e o script técnico começa em página
+       nova mesmo quando sobra espaço. É como o material chega ao set. */
+    .im-quebra { break-after: page; }
+
+    /* ── Tabela de duas colunas ─────────────────────────────────────────── */
+    .im-tabela {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;   /* sem isto, uma tomada com texto longo rouba
+                                  a largura das outras colunas */
+    }
+    .im-tabela th, .im-tabela td {
+        border: 0.5pt solid #bbbbbb;
+        padding: 5pt 6pt;
+        text-align: left;
+        vertical-align: top;
+        /* Uma tomada nunca deve começar no fim de uma página e terminar na
+           seguinte: quem está no set lê a linha inteira de uma vez. */
+        break-inside: avoid;
+    }
+    .im-tabela thead th {
+        background: #eeeeee;
+        font-size: 8pt;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        /* Sem isto o cabeçalho aparece só na primeira página e as seguintes
+           viram três colunas sem nome. */
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    /* Repete o cabeçalho em toda página — comportamento nativo de thead. */
+    .im-tabela thead { display: table-header-group; }
+
+    .im-col-indice {
+        width: 9%;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        color: #555555;
+    }
+    .im-col-video { width: 45.5%; }
+    .im-col-audio { width: 45.5%; }
+
+    /* A linha de cena é uma faixa que separa blocos de tomadas. */
+    .im-cena th {
+        background: #dddddd;
+        font-size: 9pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

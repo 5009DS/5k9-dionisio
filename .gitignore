@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+
+# Material de origem, não código: o ZIP do AutoScript e o que foi extraído
+# dele para a migração.
+AutoScript_extracted/
+*.zip

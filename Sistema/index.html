@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="ds">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5K9 Dionísio</title>
+    <meta name="description" content="Roteiros e scripts técnicos audiovisuais do 5K9 Studio.">
+    <meta name="theme-color" content="#7F00E1">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Instrument Sans variável, local. NÃO troque pelo Google Fonts: de lá
+         o eixo de largura (wdth) não vem e a voz Condensed do display morre. -->
+    <link rel="preload" href="/assets/fonts/InstrumentSans-Variable.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="/assets/fonts.css">
+
+    <!-- Lucide: cópia local, não CDN. O unpkg já falhou em teste no Forms, e
+         um editor sem ícone nenhum fica indecifrável. -->
+    <script src="/lucide.min.js"></script>
+
+    <!-- Design tokens (base do design system) -->
+    <link rel="stylesheet" href="/tokens.css">
+    <!-- Tokens da marca 5K9, escopados em [data-ds-brand] (ver ds/README-gerado.txt) -->
+    <link rel="stylesheet" href="/ds/ds-tokens.scoped.css">
+    <!-- Ponte: traduz os nomes semânticos para os tokens da marca -->
+    <link rel="stylesheet" href="/tokens-bridge.css">
+    <!-- Vocabulário compartilhado das páginas do Dionísio -->
+    <link rel="stylesheet" href="/pages/dionisio.css">
+    <!-- Folha de impressão: só vale em @media print (ver o arquivo) -->
+    <link rel="stylesheet" href="/pages/impressao.css">
+
+    <!-- Aplica o tema salvo antes do render, para não haver flash de branco.
+         A classe .ds já está no <html> acima: aqui, como no Gestor, não
+         existe página legada fora do design system. -->
+    <script>
+        (function () {
+            try {
+                document.documentElement.setAttribute('data-theme',
+                    localStorage.getItem('5k9_theme') || 'dark');
+            } catch (e) {}
+        })();
+    </script>
+
+    <style>
+        /* Só o mínimo: o resto vem dos tokens. */
+        * { box-sizing: border-box; }
+        body { margin: 0; display: flex; min-height: 100vh; background: var(--surface-base); }
+        #app { display: flex; flex: 1; min-width: 0; }
+
+        .app-aviso {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: var(--space-4);
+            padding: var(--space-8); text-align: center;
+            font-family: var(--font-sans); color: var(--text-primary);
+        }
+        .app-aviso h2 { margin: 0; font-size: var(--text-h2); letter-spacing: var(--tracking-tight); }
+        .app-aviso p  { margin: 0; font-size: var(--text-sm); color: var(--text-tertiary); max-width: 44ch; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <!-- Área de impressão: fica vazia e invisível na tela, e é preenchida no
+         instante em que a pessoa manda imprimir (ver lib/exportar.js). -->
+    <div id="impressao" aria-hidden="true"></div>
+    <script type="module" src="/app.js"></script>
+</body>
+</html>
