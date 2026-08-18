@@ -43,8 +43,8 @@
    /rest/v1/auth/v1/token e falharia sem dizer por quê.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-export const SUPABASE_URL  = '';
-export const SUPABASE_ANON = '';
+export const SUPABASE_URL  = 'https://dppgtlclpgdvxhnnulgf.supabase.co';
+export const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwcGd0bGNscGdkdnhobm51bGdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMzcyNjUsImV4cCI6MjEwMTgxMzI2NX0.31Z-UOk4RUYBz4WtqNYmktiocgBIryTe6bChj9DHZiA';
 
 /** Há banco configurado? Se não, o store cai no adaptador local. */
 export const CONFIGURADO = !!(SUPABASE_URL && SUPABASE_ANON);
